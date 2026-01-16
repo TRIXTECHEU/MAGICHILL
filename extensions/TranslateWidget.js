@@ -3,98 +3,116 @@
 (function () {
   function deepQueryAll(root, selector) {
     var found = [];
-    var stack = [root];
+    
+    // 1. Hledání v aktuálním rootu
+    try {
+      var nodes = root.querySelectorAll(selector);
+      found = found.concat([].slice.call(nodes));
+    } catch (e) {}
 
-    while (stack.length) {
-      var node = stack.pop();
-
-      try {
-        if (node && node.querySelectorAll) {
-          found = found.concat([].slice.call(node.querySelectorAll(selector)));
-        }
-      } catch (e) {}
-
-      if (node && node.tagName === 'IFRAME') {
-        try {
-          if (node.contentDocument) stack.push(node.contentDocument);
-        } catch (e) {}
+    // 2. Rekurzivní hledání v Shadow DOM
+    // Použití TreeWalker pro efektivní průchod všemi elementy
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, null, false);
+    
+    while (walker.nextNode()) {
+      var node = walker.currentNode;
+      
+      if (node.shadowRoot) {
+        found = found.concat(deepQueryAll(node.shadowRoot, selector));
       }
 
-      if (node && node.shadowRoot) stack.push(node.shadowRoot);
+      if (node.tagName === 'IFRAME') {
+        try {
+          if (node.contentDocument) {
+            found = found.concat(deepQueryAll(node.contentDocument, selector));
+          }
+        } catch (e) {}
+      }
     }
 
     return found;
   }
 
   function setAttrIfDiff(el, name, value) {
-    var cur = el.getAttribute(name);
-    if (cur !== value) el.setAttribute(name, value);
+    if (el.getAttribute(name) !== value) {
+        el.setAttribute(name, value);
+    }
   }
 
   function translateButtons() {
+    // --- SEND BUTTONS ---
     var sendSelector = [
       'button[title="Send"]',
       'button[aria-label="Send"]',
       'button[title*="Send"]',
       'button[aria-label*="Send"]',
-      'button[title="Odeslat"]',
-      'button[aria-label="Odeslat"]',
-      'button[title*="Odeslat"]',
-      'button[aria-label*="Odeslat"]'
+      '.vfrc-chat-input--button', 
+      'button[type="submit"]'
     ].join(', ');
 
     var sendButtons = deepQueryAll(document, sendSelector);
+    
     for (var i = 0; i < sendButtons.length; i++) {
       var btn = sendButtons[i];
-      if (btn.__trixTranslatedSend) continue;
-      btn.__trixTranslatedSend = true;
+      if (btn.dataset.ttTranslated === 'send') continue;
+      
+      // Validace, zda jde o send button
+      var ariaLabel = (btn.getAttribute('aria-label') || '').toLowerCase();
+      var title = (btn.getAttribute('title') || '').toLowerCase();
+      var isVfrc = btn.classList.contains('vfrc-chat-input--button');
+      
+      if (!isVfrc && ariaLabel.indexOf('send') === -1 && title.indexOf('send') === -1 && btn.type !== 'submit') {
+          continue;
+      }
 
-      if (btn.title !== 'Odeslat') btn.title = 'Odeslat';
+      btn.dataset.ttTranslated = 'send';
+
+      if (btn.title && btn.title !== 'Odeslat') btn.title = 'Odeslat';
       setAttrIfDiff(btn, 'aria-label', 'Odeslat');
       setAttrIfDiff(btn, 'data-balloon', 'Odeslat');
-      setAttrIfDiff(btn, 'aria-live', 'polite');
-
-      var txt = (btn.textContent || '').trim();
-      if (txt && txt !== 'Odeslat') btn.textContent = 'Odeslat';
+      
+      // Ikony uvnitř send buttonu
+      var icons = btn.querySelectorAll('img, svg');
+      for (var k = 0; k < icons.length; k++) {
+        setAttrIfDiff(icons[k], 'alt', 'Odeslat');
+      }
     }
 
+    // --- LAUNCHER BUTTONS ---
     var launcherSelector = [
       'button.vfrc-launcher',
+      '.vfrc-launcher',
       'button[title*="Open chat"]',
       'button[aria-label*="Open chat"]',
-      'button[title*="chat agent"]',
-      'button[aria-label*="chat agent"]',
-      'button[title*="Otevřít chat"]',
-      'button[aria-label*="Otevřít chat"]'
+      'div[role="button"][aria-label*="Open chat"]'
     ].join(', ');
 
     var launcherButtons = deepQueryAll(document, launcherSelector);
+    
     for (var j = 0; j < launcherButtons.length; j++) {
       var lb = launcherButtons[j];
-      if (lb.__trixTranslatedLauncher) continue;
-      lb.__trixTranslatedLauncher = true;
+      if (lb.dataset.ttTranslated === 'launcher') continue;
+      lb.dataset.ttTranslated = 'launcher';
 
       var label = 'Otevřít chat';
-      if (lb.title !== label) lb.title = label;
+      
+      if (lb.title && lb.title !== label) lb.title = label;
       setAttrIfDiff(lb, 'aria-label', label);
       setAttrIfDiff(lb, 'data-balloon', label);
-      setAttrIfDiff(lb, 'aria-live', 'polite');
 
-      var t = (lb.textContent || '').trim();
-      if (t && t !== label) lb.textContent = label;
+      // Voiceflow tooltip fix
+      var tooltip = lb.querySelector && lb.querySelector('.vfrc-tooltip');
+      if (tooltip) tooltip.textContent = label;
 
-      var icons = lb.querySelectorAll ? lb.querySelectorAll('img, svg') : [];
-      for (var k = 0; k < icons.length; k++) {
-        setAttrIfDiff(icons[k], 'alt', label);
-        setAttrIfDiff(icons[k], 'aria-label', label);
-        setAttrIfDiff(icons[k], 'title', label);
+      // Textový obsah
+      if (lb.childNodes.length === 1 && lb.childNodes[0].nodeType === 3 && lb.textContent.trim() === 'Chat') {
+         lb.textContent = label;
       }
     }
   }
 
   function run() {
     var scheduled = false;
-
     function schedule() {
       if (scheduled) return;
       scheduled = true;
@@ -107,15 +125,18 @@
     schedule();
 
     var observer = new MutationObserver(function (muts) {
+      var shouldUpdate = false;
       for (var i = 0; i < muts.length; i++) {
-        if (muts[i].type === 'childList' && muts[i].addedNodes && muts[i].addedNodes.length) {
-          schedule();
-          break;
+        // Ignorujeme změny atributů, které děláme my
+        if (muts[i].type === 'childList') {
+            shouldUpdate = true;
+            break;
         }
       }
+      if (shouldUpdate) schedule();
     });
 
-    observer.observe(document.documentElement, { childList: true, subtree: true });
+    observer.observe(document.body, { childList: true, subtree: true });
   }
 
   if (document.readyState === 'loading') {
