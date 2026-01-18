@@ -4,14 +4,11 @@
   function deepQueryAll(root, selector) {
     var found = [];
     
-    // 1. Hledání v aktuálním rootu
     try {
       var nodes = root.querySelectorAll(selector);
       found = found.concat([].slice.call(nodes));
     } catch (e) {}
 
-    // 2. Rekurzivní hledání v Shadow DOM
-    // Použití TreeWalker pro efektivní průchod všemi elementy
     var walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, null, false);
     
     while (walker.nextNode()) {
@@ -40,7 +37,6 @@
   }
 
   function translateButtons() {
-    // --- SEND BUTTONS ---
     var sendSelector = [
       'button[title="Send"]',
       'button[aria-label="Send"]',
@@ -56,7 +52,6 @@
       var btn = sendButtons[i];
       if (btn.dataset.ttTranslated === 'send') continue;
       
-      // Validace, zda jde o send button
       var ariaLabel = (btn.getAttribute('aria-label') || '').toLowerCase();
       var title = (btn.getAttribute('title') || '').toLowerCase();
       var isVfrc = btn.classList.contains('vfrc-chat-input--button');
@@ -71,14 +66,12 @@
       setAttrIfDiff(btn, 'aria-label', 'Odeslat');
       setAttrIfDiff(btn, 'data-balloon', 'Odeslat');
       
-      // Ikony uvnitř send buttonu
       var icons = btn.querySelectorAll('img, svg');
       for (var k = 0; k < icons.length; k++) {
         setAttrIfDiff(icons[k], 'alt', 'Odeslat');
       }
     }
 
-    // --- LAUNCHER BUTTONS ---
     var launcherSelector = [
       'button.vfrc-launcher',
       '.vfrc-launcher',
@@ -100,11 +93,9 @@
       setAttrIfDiff(lb, 'aria-label', label);
       setAttrIfDiff(lb, 'data-balloon', label);
 
-      // Voiceflow tooltip fix
       var tooltip = lb.querySelector && lb.querySelector('.vfrc-tooltip');
       if (tooltip) tooltip.textContent = label;
 
-      // Textový obsah
       if (lb.childNodes.length === 1 && lb.childNodes[0].nodeType === 3 && lb.textContent.trim() === 'Chat') {
          lb.textContent = label;
       }
@@ -127,7 +118,6 @@
     var observer = new MutationObserver(function (muts) {
       var shouldUpdate = false;
       for (var i = 0; i < muts.length; i++) {
-        // Ignorujeme změny atributů, které děláme my
         if (muts[i].type === 'childList') {
             shouldUpdate = true;
             break;
