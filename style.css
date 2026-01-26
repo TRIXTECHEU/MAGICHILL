@@ -654,7 +654,7 @@ a._1s44wxa5:focus-visible {
 }
 
 /* 14.4) Launcher image circle */
-.vfrc-button._1q15b0b0.c26d8x0._1q15b0b2.vfrc-launcher.f6dof81._1q15b0b0.c26d8x0._1q15b0b5:has(img[alt="open chat"]), .vfrc-button._1q15b0b0.c26d8x0._1q15b0b2.vfrc-launcher.f6dof81._1q15b0b0.c26d8x0._1q15b0b5:has(.f6dof8u.f6dof8w.f6dof8h) {
+button.vfrc-launcher[class*="_1u16jol1"]:has(img[alt="open chat"]) {
   width: 75px !important;
   height: 75px !important;
   min-width: 75px !important;
@@ -678,7 +678,7 @@ a._1s44wxa5:focus-visible {
 }
 
 /* 14.5) Wrapper that holds the size */
-div.f6dof80:has(img[alt="open chat"]) {
+[class*="vfrc-launcher__inner"][class*="_1u16jol9"]:has(img[alt="open chat"]) {
   width: 80px !important;
   height: 80px !important;
   min-width: 80px !important;
@@ -688,9 +688,9 @@ div.f6dof80:has(img[alt="open chat"]) {
 }
 
 .vfrc-button.vfrc-launcher img[alt="open chat"],
-.vfrc-button.vfrc-launcher img.f6dof8u {
-  width: 65px !important;
-  height: 65px !important;
+.vfrc-button.vfrc-launcher img[class*="vfrc-launcher--media-icon"] {
+  width: 70px !important;
+  height: 70px !important;
   border-radius: 50% !important;
   object-fit: cover !important;
   transform: scale(1) !important;
@@ -700,8 +700,8 @@ div.f6dof80:has(img[alt="open chat"]) {
 
 .vfrc-button.vfrc-launcher:hover img[alt="open chat"],
 .vfrc-button.vfrc-launcher:focus-visible img[alt="open chat"],
-.vfrc-button.vfrc-launcher:hover img.f6dof8u,
-.vfrc-button.vfrc-launcher:focus-visible img.f6dof8u {
+.vfrc-button.vfrc-launcher:hover img[class*="vfrc-launcher--media-icon"],
+.vfrc-button.vfrc-launcher:focus-visible img[class*="vfrc-launcher--media-icon"] {
   transform: scale(1.1) !important;
 }
 
@@ -711,8 +711,8 @@ div._1emja3f9:has(#voiceflow-chat) {
   align-items: flex-end !important;
 }
 
-.vfrc-launcher:hover img.f6dof8u,
-.vfrc-launcher:focus-visible img.f6dof8u,
+.vfrc-launcher:hover img[class*="vfrc-launcher--media-icon"],
+.vfrc-launcher:focus-visible img[class*="vfrc-launcher--media-icon"],
 .vfrc-launcher:hover img[alt="open chat"],
 .vfrc-launcher:focus-visible img[alt="open chat"] {
   transform: scale(1.1) !important;
